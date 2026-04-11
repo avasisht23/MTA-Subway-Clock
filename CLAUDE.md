@@ -16,7 +16,7 @@ NYC Subway LED Clock — a Raspberry Pi 3 + Adafruit RGB Matrix Bonnet project t
 
 ## Hardware specifics
 
-- Panels are **P6 32x16**, two daisy-chained = 64x16 pixels total
+- Panel is **P6 64x32** (single panel, 64 pixels wide, 32 pixels tall)
 - Uses **Adafruit RGB Matrix Bonnet** (`hardware_mapping = "adafruit-hat"`)
 - Pi 3 needs `gpio_slowdown = 3`
 - The `rgbmatrix` Python module was compiled manually on the Pi from `~/rpi-rgb-led-matrix` using Cython + g++. It is NOT pip-installable. The compiled `.so` files live in `~/rpi-rgb-led-matrix/bindings/python/rgbmatrix/`.
@@ -32,7 +32,7 @@ NYC Subway LED Clock — a Raspberry Pi 3 + Adafruit RGB Matrix Bonnet project t
 - **Font finding** — `_find_font()` needs `SUDO_USER` or `HOME` env var set correctly when running as root, otherwise `~` expands to `/root/` and fonts aren't found. The service file sets these.
 - **Display rotation** — `main.py` increments `_rotation_index` on the display object every 10 seconds. The display's `update()` method uses this to pick which active line to show.
 - **Comma separator** — Uses 2 hand-drawn diagonal pixels instead of the BDF font's comma character, to save horizontal space.
-- **Single vs dual panel** — `MATRIX_CHAIN` in config controls panel count. With 1 panel (32px wide), station name is omitted. With 2 panels (64px wide), station name shows in green between the badge and times.
+- **64x32 panel layout** — Two rows of subway info, each with octagon badge + station name + arrival times. Rotates through active lines in pairs every 10 seconds.
 
 ## Development workflow
 

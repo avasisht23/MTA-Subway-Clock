@@ -159,11 +159,45 @@ class LEDDisplay:
                 if 0 <= px < total_width and 0 <= py < MATRIX_ROWS:
                     self.canvas.SetPixel(px, py, r, g, b)
 
+    def _draw_line_row(self, y_center, line_id, times):
+        """Draw one subway line's info at the given vertical center.
+
+        Layout: [octagon badge] [station name] [arrival times]
+        """
+        graphics = self.graphics
+        r, g, b = LINE_COLORS.get(line_id, (255, 255, 255))
+        station = LINE_STATION.get(line_id, "")
+
+        # Octagon badge centered vertically at y_center
+        self._draw_octagon(7, y_center, r, g, b)
+
+        # Line letter in white inside the octagon
+        white_letter = graphics.Color(255, 255, 255)
+        graphics.DrawText(self.canvas, self.font, 5, y_center + 4, white_letter, line_id)
+
+        # Station name in green
+        green = graphics.Color(0, 200, 0)
+        x = 16
+        x += graphics.DrawText(self.canvas, self.font, x, y_center + 4, green, station)
+        x += 3
+
+        # Arrival times in white with custom comma separator
+        white = graphics.Color(200, 200, 200)
+        show_second = len(times) >= 2 and times[0] < 10
+        if not show_second:
+            graphics.DrawText(self.canvas, self.font, x, y_center + 4, white, str(times[0]))
+        else:
+            x += graphics.DrawText(self.canvas, self.font, x, y_center + 4, white, str(times[0]))
+            self.canvas.SetPixel(x, y_center + 3, 200, 200, 200)
+            self.canvas.SetPixel(x - 1, y_center + 4, 200, 200, 200)
+            x += 2
+            graphics.DrawText(self.canvas, self.font, x, y_center + 4, white, str(times[1]))
+
     def update(self, arrivals):
         """Render arrivals to the LED matrix.
 
-        Rotates through active lines. Shows octagon badge, station name,
-        and arrival times. Only shows 2nd arrival if 1st is under 10 min.
+        64x32 layout: 2 rows, each with octagon badge + station + times.
+        Rotates through active lines in pairs.
         """
         self.canvas.Clear()
         graphics = self.graphics
@@ -178,36 +212,19 @@ class LEDDisplay:
 
         if not active:
             dim = graphics.Color(150, 150, 150)
-            graphics.DrawText(self.canvas, self.font, 10, 13, dim, "No trains")
+            graphics.DrawText(self.canvas, self.font, 10, 20, dim, "No trains")
         else:
-            self._rotation_index = self._rotation_index % len(active)
-            line_id, times = active[self._rotation_index]
-            r, g, b = LINE_COLORS.get(line_id, (255, 255, 255))
-            station = LINE_STATION.get(line_id, "")
+            # Show 2 lines at a time, rotating through pairs
+            start = (self._rotation_index * 2) % len(active)
 
-            # Octagon badge
-            self._draw_octagon(7, 7, r, g, b)
+            # Row 1: centered at y=8 (top half of 32px panel)
+            line_id, times = active[start]
+            self._draw_line_row(8, line_id, times)
 
-            # Line letter in white inside the octagon
-            white_letter = graphics.Color(255, 255, 255)
-            graphics.DrawText(self.canvas, self.font, 5, 11, white_letter, line_id)
-
-            # Station name in green
-            green = graphics.Color(0, 200, 0)
-            x = 16
-            x += graphics.DrawText(self.canvas, self.font, x, 11, green, station)
-            x += 3
-
-            # Arrival times in white with custom comma separator
-            white = graphics.Color(200, 200, 200)
-            show_second = len(times) >= 2 and times[0] < 10
-            if not show_second:
-                graphics.DrawText(self.canvas, self.font, x, 11, white, str(times[0]))
-            else:
-                x += graphics.DrawText(self.canvas, self.font, x, 11, white, str(times[0]))
-                self.canvas.SetPixel(x, 10, 200, 200, 200)
-                self.canvas.SetPixel(x - 1, 11, 200, 200, 200)
-                x += 2
-                graphics.DrawText(self.canvas, self.font, x, 11, white, str(times[1]))
+            # Row 2: centered at y=24 (bottom half of 32px panel)
+            if len(active) > 1:
+                row2_idx = (start + 1) % len(active)
+                line_id, times = active[row2_idx]
+                self._draw_line_row(24, line_id, times)
 
         self.canvas = self.matrix.SwapOnVSync(self.canvas)

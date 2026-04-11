@@ -60,10 +60,10 @@ REFRESH_INTERVAL = 30    # seconds between feed refreshes
 MAX_MINUTES = 30         # ignore trains more than this many minutes away
 MAX_ARRIVALS_PER_LINE = 2  # max arrival times to track per line
 
-# --- LED Matrix Settings (2x chained 16x32 panels) ---
-MATRIX_ROWS = 16
-MATRIX_COLS = 32
-MATRIX_CHAIN = 2          # 2 panels side by side = 64 pixels wide
+# --- LED Matrix Settings (single 64x32 panel) ---
+MATRIX_ROWS = 32
+MATRIX_COLS = 64
+MATRIX_CHAIN = 1          # 1 panel
 MATRIX_PARALLEL = 1
 MATRIX_HARDWARE = "adafruit-hat"  # Adafruit RGB Matrix Bonnet
 MATRIX_GPIO_SLOWDOWN = 3    # Pi 3 needs slowdown=3

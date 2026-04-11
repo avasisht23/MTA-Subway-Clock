@@ -13,15 +13,14 @@ A Raspberry Pi-powered LED display that shows real-time NYC subway arrival times
 
 - **Raspberry Pi 3** (any Pi with WiFi works)
 - **Adafruit RGB Matrix Bonnet** — sits on GPIO, provides HUB75 output and DC power input
-- **2x P6 32x16 RGB LED panels** — daisy-chained side by side (64x16 total)
+- **P6 64x32 RGB LED panel** — single panel (64x32 pixels)
 - **5V 4A DC power supply** with 2.1mm barrel jack — powers everything through the bonnet
 
 ### Wiring
 
 ```
 5V Power Supply → Bonnet DC Jack
-Bonnet HUB75 → Panel 1 INPUT (left)
-Panel 1 OUTPUT → Panel 2 INPUT (right)
+Bonnet HUB75 → Panel DATA INPUT
 ```
 
 No jumper wires needed — the bonnet handles all GPIO connections.
@@ -97,9 +96,10 @@ sudo reboot
 
 ## Display layout
 
-On a 64x16 pixel display (two 32x16 panels):
+On a 64x32 pixel display (two rows):
 
 ```
+[octagon badge]  StationName  Time1,Time2
 [octagon badge]  StationName  Time1,Time2
 ```
 
