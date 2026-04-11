@@ -43,6 +43,25 @@ NYC Subway LED Clock — a Raspberry Pi 3 + Adafruit RGB Matrix Bonnet project t
 5. Test feed without display: `python3 test_feed.py`
 6. Test display on Mac: `python3 main.py --test`
 
+## Service management
+
+The clock runs as a systemd service. After deploying code changes, the service must be restarted — it does not pick up file changes automatically.
+
+- **Restart after code changes**: `sudo systemctl restart subway-clock`
+- **Stop the clock**: `sudo systemctl stop subway-clock`
+- **Start the clock**: `sudo systemctl start subway-clock`
+- **Disable auto-start on boot**: `sudo systemctl disable subway-clock`
+- **Re-enable auto-start on boot**: `sudo systemctl enable subway-clock`
+- **Check status**: `sudo systemctl status subway-clock`
+- **View logs**: `sudo journalctl -u subway-clock -f`
+
+If `subway-clock.service` itself was changed, copy it and reload before restarting:
+```
+sudo cp ~/subway-clock/subway-clock.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl restart subway-clock
+```
+
 ## Future work
 
 - **Web remote control** — Flask/FastAPI server on Pi for phone-based line switching (tap to change displayed line, toggle auto-rotate, adjust brightness)

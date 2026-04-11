@@ -83,6 +83,33 @@ python3 main.py --test      # terminal display simulation
    sudo systemctl start subway-clock
    ```
 
+### Managing the service
+
+After deploying code changes via `scp`, restart the service to pick them up:
+
+```bash
+sudo systemctl restart subway-clock   # restart after code changes
+sudo systemctl stop subway-clock      # stop the clock
+sudo systemctl start subway-clock     # start the clock
+sudo systemctl status subway-clock    # check if running
+sudo journalctl -u subway-clock -f    # view live logs
+```
+
+To disable/enable auto-start on boot:
+
+```bash
+sudo systemctl disable subway-clock   # don't start on boot
+sudo systemctl enable subway-clock    # start on boot
+```
+
+If you changed `subway-clock.service` itself:
+
+```bash
+sudo cp ~/subway-clock/subway-clock.service /etc/systemd/system/
+sudo systemctl daemon-reload
+sudo systemctl restart subway-clock
+```
+
 ### Optional Pi optimizations
 
 ```bash
