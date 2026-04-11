@@ -1,0 +1,3 @@
+nyct-gtfs>=2.0.0
+protobuf>=5.0.0
+pytz

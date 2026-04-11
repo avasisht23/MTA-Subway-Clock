@@ -1,0 +1,20 @@
+[Unit]
+Description=NYC Subway LED Clock
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Environment=PYTHONPATH=/home/avasisht/rpi-rgb-led-matrix/bindings/python:/home/avasisht/.local/lib/python3.13/site-packages
+Environment=HOME=/home/avasisht
+Environment=SUDO_USER=avasisht
+WorkingDirectory=/home/avasisht/subway-clock
+ExecStart=/usr/bin/python3 /home/avasisht/subway-clock/main.py
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
