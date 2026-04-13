@@ -16,8 +16,7 @@ from config import (
     ANSI_RESET,
     ANSI_WHITE,
     ANSI_DIM,
-    ROW_1_LINES,
-    ROW_2_LINES,
+    STATION_GROUPS,
     MATRIX_ROWS,
     MATRIX_COLS,
     MATRIX_CHAIN,
@@ -51,38 +50,41 @@ def _format_row(lines, arrivals):
 class TerminalDisplay:
     """Render subway times to the terminal with ANSI colors."""
 
+    def __init__(self):
+        self._rotation_index = 0
+
     def update(self, arrivals):
-        """Print current arrivals to stdout."""
+        """Print current arrivals to stdout, showing one station group at a time."""
         sys.stdout.write("\033[2J\033[H")
 
         print("=" * 40)
         print("  NYC Subway Clock  (Manhattan-bound)")
         print("=" * 40)
 
-        row1 = _format_row(ROW_1_LINES, arrivals)
-        if row1:
-            parts = []
-            for line_id, text in row1:
-                color = LINE_ANSI_COLORS.get(line_id, "")
-                parts.append(f"{color}{line_id}{ANSI_RESET}{ANSI_WHITE}{text[1:]}{ANSI_RESET}")
-            print("  " + "  ".join(parts))
-        else:
-            print(f"  {ANSI_DIM}No lettered trains{ANSI_RESET}")
+        # Find station groups that have active arrivals
+        active_groups = []
+        for group in STATION_GROUPS:
+            group_lines = [(lid, arrivals[lid]) for lid in group["lines"] if arrivals.get(lid)]
+            if group_lines:
+                active_groups.append((group["name"], group_lines))
 
-        row2 = _format_row(ROW_2_LINES, arrivals)
-        if row2:
-            parts = []
-            for line_id, text in row2:
-                color = LINE_ANSI_COLORS.get(line_id, "")
-                parts.append(f"{color}{line_id}{ANSI_RESET}{ANSI_WHITE}{text[1:]}{ANSI_RESET}")
-            print("  " + "  ".join(parts))
+        if not active_groups:
+            print(f"  {ANSI_DIM}No trains{ANSI_RESET}")
         else:
-            print(f"  {ANSI_DIM}No numbered trains{ANSI_RESET}")
+            idx = self._rotation_index % len(active_groups)
+            station_name, lines = active_groups[idx]
+            print(f"  {ANSI_WHITE}{station_name}{ANSI_RESET}")
+            for line_id, times in lines:
+                color = LINE_ANSI_COLORS.get(line_id, "")
+                time_str = ", ".join(f"{t} min" for t in times)
+                print(f"    {color}{line_id}{ANSI_RESET}  {time_str}")
+            if len(lines) == 1:
+                print(f"\n  \033[94mSafe trip!\033[0m")
 
         print("-" * 40)
-        print("\n  Detailed:")
-        for lines_group in [ROW_1_LINES, ROW_2_LINES]:
-            for line_id in lines_group:
+        print("\n  All stations:")
+        for group in STATION_GROUPS:
+            for line_id in group["lines"]:
                 times = arrivals.get(line_id, [])
                 if times:
                     color = LINE_ANSI_COLORS.get(line_id, "")
@@ -188,54 +190,62 @@ class LEDDisplay:
 
         # Station name in green
         green = graphics.Color(0, 200, 0)
-        x = 16
-        x += graphics.DrawText(self.canvas, self.font, x, y_center + 4, green, station)
-        x += 3
+        graphics.DrawText(self.canvas, self.font, 16, y_center + 4, green, station)
 
-        # Arrival times in white with custom comma separator
+        # Arrival times right-aligned with custom comma separator
         white = graphics.Color(200, 200, 200)
+        panel_width = MATRIX_COLS * MATRIX_CHAIN
+        char_w = 6  # 6x10.bdf font width
         show_second = len(times) >= 2 and times[0] < 10
         if not show_second:
-            graphics.DrawText(self.canvas, self.font, x, y_center + 4, white, str(times[0]))
+            t1 = str(times[0])
+            x = panel_width - len(t1) * char_w
+            graphics.DrawText(self.canvas, self.font, x, y_center + 4, white, t1)
         else:
-            x += graphics.DrawText(self.canvas, self.font, x, y_center + 4, white, str(times[0]))
+            t1, t2 = str(times[0]), str(times[1])
+            # total width: t1 chars + 2px comma + t2 chars
+            total_w = len(t1) * char_w + 2 + len(t2) * char_w
+            x = panel_width - total_w
+            x += graphics.DrawText(self.canvas, self.font, x, y_center + 4, white, t1)
             self.canvas.SetPixel(x, y_center + 3, 200, 200, 200)
             self.canvas.SetPixel(x - 1, y_center + 4, 200, 200, 200)
             x += 2
-            graphics.DrawText(self.canvas, self.font, x, y_center + 4, white, str(times[1]))
+            graphics.DrawText(self.canvas, self.font, x, y_center + 4, white, t2)
 
     def update(self, arrivals):
         """Render arrivals to the LED matrix.
 
         64x32 layout: 2 rows, each with octagon badge + station + times.
-        Rotates through active lines in pairs.
+        Rotates through station groups so all lines at one station show together.
         """
         self.canvas.Clear()
         graphics = self.graphics
 
-        # Collect active lines sorted by soonest arrival
-        active = []
-        for line_id in ALL_LINES:
-            times = arrivals.get(line_id, [])
-            if times:
-                active.append((line_id, times))
-        active.sort(key=lambda x: x[1][0])
+        # Build active station groups (stations with at least one arriving train)
+        active_groups = []
+        for group in STATION_GROUPS:
+            group_lines = [(lid, arrivals[lid]) for lid in group["lines"] if arrivals.get(lid)]
+            if group_lines:
+                active_groups.append(group_lines)
 
-        if not active:
+        if not active_groups:
             dim = graphics.Color(150, 150, 150)
             graphics.DrawText(self.canvas, self.font, 10, 20, dim, "No trains")
         else:
-            # Show 2 lines at a time, rotating through pairs
-            start = (self._rotation_index * 2) % len(active)
+            idx = self._rotation_index % len(active_groups)
+            lines = active_groups[idx]
 
-            # Row 1: centered at y=8 (top half of 32px panel)
-            line_id, times = active[start]
-            self._draw_line_row(8, line_id, times)
-
-            # Row 2: centered at y=24 (bottom half of 32px panel)
-            if len(active) > 1:
-                row2_idx = (start + 1) % len(active)
-                line_id, times = active[row2_idx]
+            if len(lines) == 1:
+                # Single line — top row, friendly message on bottom
+                line_id, times = lines[0]
+                self._draw_line_row(8, line_id, times)
+                msg_color = graphics.Color(100, 100, 255)
+                graphics.DrawText(self.canvas, self.font, 4, 28, msg_color, "Safe trip!")
+            else:
+                # Two lines — top and bottom rows
+                line_id, times = lines[0]
+                self._draw_line_row(8, line_id, times)
+                line_id, times = lines[1]
                 self._draw_line_row(24, line_id, times)
 
         self.canvas = self.matrix.SwapOnVSync(self.canvas)
