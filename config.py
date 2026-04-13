@@ -80,8 +80,14 @@ MATRIX_PANEL_TYPE = ""         # FM6124 chip needs no special init
 # --- Display Layout ---
 # All lines to display, in priority order
 ALL_LINES = ["C", "B", "Q", "2", "3", "4", "5"]
-ROW_1_LINES = ["C", "B", "Q"]
-ROW_2_LINES = ["2", "3", "4", "5"]
+
+# Station groups for display rotation — each entry is shown together
+STATION_GROUPS = [
+    {"name": "Clinton-Wash", "lines": ["C"]},
+    {"name": "7 Av",         "lines": ["B", "Q"]},
+    {"name": "Eastern Pkwy", "lines": ["2", "3"]},
+    {"name": "Atlantic Av",  "lines": ["4", "5"]},
+]
 
 # Short station names for LED display (max ~5 chars)
 LINE_STATION = {
@@ -90,6 +96,6 @@ LINE_STATION = {
     "Q": "7 Av",
     "2": "E Pk",
     "3": "E Pk",
-    "4": "Atl",
-    "5": "Atl",
+    "4": "Atlc",
+    "5": "Atlc",
 }
