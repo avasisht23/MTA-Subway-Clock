@@ -41,6 +41,9 @@ LINE_COLORS = {
     "5": (0, 153, 82),      # Green (Lexington)
 }
 
+# Lines that use black letter on light-colored badge (matches MTA style)
+DARK_LETTER_LINES = {"Q"}
+
 # ANSI color codes for terminal display (closest match to MTA colors)
 LINE_ANSI_COLORS = {
     "C": "\033[34m",     # Blue
@@ -66,11 +69,13 @@ MATRIX_COLS = 64
 MATRIX_CHAIN = 1          # 1 panel
 MATRIX_PARALLEL = 1
 MATRIX_HARDWARE = "adafruit-hat"  # Adafruit RGB Matrix Bonnet
-MATRIX_GPIO_SLOWDOWN = 3    # Pi 3 needs slowdown=3
+MATRIX_GPIO_SLOWDOWN = 4    # P3 panels need higher slowdown than P6
 MATRIX_BRIGHTNESS = 60      # 0-100, keep moderate to reduce power draw
 MATRIX_PWM_BITS = 7         # Lower = faster refresh, less color depth
-MATRIX_ROW_ADDR_TYPE = 0    # Address type (0=default, try 1-4 if display garbled)
-MATRIX_MULTIPLEXING = 0     # Multiplexing (0=default, try 1-8 for 1/4 scan panels)
+MATRIX_ROW_ADDR_TYPE = 0    # Address type (0=default)
+MATRIX_MULTIPLEXING = 0     # Multiplexing (0=default)
+MATRIX_PIXEL_MAPPER = ""    # Pixel mapper (leave empty for single panel)
+MATRIX_PANEL_TYPE = ""         # FM6124 chip needs no special init
 
 # --- Display Layout ---
 # All lines to display, in priority order
