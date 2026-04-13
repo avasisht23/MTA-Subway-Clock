@@ -28,6 +28,9 @@ from config import (
     MATRIX_PWM_BITS,
     MATRIX_ROW_ADDR_TYPE,
     MATRIX_MULTIPLEXING,
+    MATRIX_PIXEL_MAPPER,
+    MATRIX_PANEL_TYPE,
+    DARK_LETTER_LINES,
 )
 
 
@@ -123,6 +126,10 @@ class LEDDisplay:
         options.pwm_bits = MATRIX_PWM_BITS
         options.row_address_type = MATRIX_ROW_ADDR_TYPE
         options.multiplexing = MATRIX_MULTIPLEXING
+        if MATRIX_PIXEL_MAPPER:
+            options.pixel_mapper_config = MATRIX_PIXEL_MAPPER
+        if MATRIX_PANEL_TYPE:
+            options.panel_type = MATRIX_PANEL_TYPE
         options.drop_privileges = False
 
         self.matrix = RGBMatrix(options=options)
@@ -141,6 +148,7 @@ class LEDDisplay:
         candidates = [
             f"/home/{sudo_user}/rpi-rgb-led-matrix/fonts/{name}" if sudo_user else "",
             os.path.expanduser(f"~/rpi-rgb-led-matrix/fonts/{name}"),
+            "/home/avasisht/rpi-rgb-led-matrix/fonts/" + name,
             f"/usr/share/fonts/misc/{name}",
             f"/opt/rpi-rgb-led-matrix/fonts/{name}",
             f"fonts/{name}",
@@ -171,9 +179,12 @@ class LEDDisplay:
         # Octagon badge centered vertically at y_center
         self._draw_octagon(7, y_center, r, g, b)
 
-        # Line letter in white inside the octagon
-        white_letter = graphics.Color(255, 255, 255)
-        graphics.DrawText(self.canvas, self.font, 5, y_center + 4, white_letter, line_id)
+        # Line letter inside the octagon (black on light backgrounds, white otherwise)
+        if line_id in DARK_LETTER_LINES:
+            letter_color = graphics.Color(0, 0, 0)
+        else:
+            letter_color = graphics.Color(255, 255, 255)
+        graphics.DrawText(self.canvas, self.font, 5, y_center + 4, letter_color, line_id)
 
         # Station name in green
         green = graphics.Color(0, 200, 0)

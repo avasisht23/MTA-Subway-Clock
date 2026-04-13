@@ -2,7 +2,7 @@
 
 ## Project overview
 
-NYC Subway LED Clock — a Raspberry Pi 3 + Adafruit RGB Matrix Bonnet project that displays real-time MTA subway arrivals on P6 32x16 RGB LED panels. Currently configured for Brooklyn stations (Clinton-Washington, 7 Av, Eastern Pkwy, Atlantic Av) tracking Manhattan-bound trains.
+NYC Subway LED Clock — a Raspberry Pi 3 + Adafruit RGB Matrix Bonnet project that displays real-time MTA subway arrivals on a P3 64x32 RGB LED panel. Currently configured for Brooklyn stations (Clinton-Washington, 7 Av, Eastern Pkwy, Atlantic Av) tracking Manhattan-bound trains.
 
 ## Architecture
 
@@ -16,11 +16,26 @@ NYC Subway LED Clock — a Raspberry Pi 3 + Adafruit RGB Matrix Bonnet project t
 
 ## Hardware specifics
 
-- Panel is **P6 64x32** (single panel, 64 pixels wide, 32 pixels tall)
+- Panel is **P3-6432-2121-16S-D1.0** (single panel, 64 pixels wide, 32 pixels tall, 3mm pitch, FM6124 driver chip)
 - Uses **Adafruit RGB Matrix Bonnet** (`hardware_mapping = "adafruit-hat"`)
-- Pi 3 needs `gpio_slowdown = 3`
+- Pi 3 needs `gpio_slowdown = 4` (P3 panels need higher slowdown than P6)
+- **Power**: P3 panels need a **5V 10A power supply** — the panel must be powered directly via its 4-pin power connector (red=VCC, black=GND), not just through the bonnet's barrel jack. Blue LEDs have the highest forward voltage and are the first to drop out when underpowered.
 - The `rgbmatrix` Python module was compiled manually on the Pi from `~/rpi-rgb-led-matrix` using Cython + g++. It is NOT pip-installable. The compiled `.so` files live in `~/rpi-rgb-led-matrix/bindings/python/rgbmatrix/`.
 - Font used: `6x10.bdf` from `~/rpi-rgb-led-matrix/fonts/`
+
+### Building rgbmatrix Python bindings from scratch
+
+```bash
+git clone https://github.com/hzeller/rpi-rgb-led-matrix.git ~/rpi-rgb-led-matrix
+cd ~/rpi-rgb-led-matrix && make -C lib
+sudo apt-get install -y python3-dev cython3
+cd ~/rpi-rgb-led-matrix/bindings/python/rgbmatrix
+cython3 core.pyx --cplus -o core.cpp
+cython3 graphics.pyx --cplus -o graphics.cpp
+gcc -fPIC -c shims/pillow.c -o pillow.o $(python3-config --includes)
+g++ -shared -fPIC -O3 -I../../../include -I./shims -L../../../lib $(python3-config --includes) -o core.so core.cpp pillow.o -lrgbmatrix -lpthread -Wl,-rpath,../../../lib
+g++ -shared -fPIC -O3 -I../../../include -I./shims -L../../../lib $(python3-config --includes) -o graphics.so graphics.cpp -lrgbmatrix -lpthread -Wl,-rpath,../../../lib
+```
 
 ## Key decisions and gotchas
 
@@ -33,6 +48,8 @@ NYC Subway LED Clock — a Raspberry Pi 3 + Adafruit RGB Matrix Bonnet project t
 - **Display rotation** — `main.py` increments `_rotation_index` on the display object every 10 seconds. The display's `update()` method uses this to pick which active line to show.
 - **Comma separator** — Uses 2 hand-drawn diagonal pixels instead of the BDF font's comma character, to save horizontal space.
 - **64x32 panel layout** — Two rows of subway info, each with octagon badge + station name + arrival times. Rotates through active lines in pairs every 10 seconds.
+- **Q train badge** — Uses black letter on yellow background (matching MTA style), controlled by `DARK_LETTER_LINES` in config. All other lines use white letters.
+- **Panel type config** — `MATRIX_PANEL_TYPE` supports FM6126A/FM6127 for panels with those driver chips. The current P3 panel uses FM6124, which needs no special init (leave empty).
 
 ## Development workflow
 
